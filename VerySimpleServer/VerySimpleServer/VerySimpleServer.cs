@@ -94,8 +94,8 @@ namespace VerySimpleServer {
             private Dictionary<string, (byte[], string)> getDataRoutes = new Dictionary<string, (byte[], string)>();
             private List<Action<string>> logDelegates = new List<Action<string>>();
 
-            public Builder WithLocalhost(int port = 80)
-                => WithPrefix($"http://localhost:${port}");
+            public Builder WithLocalhost(int port = 8080)
+                => WithPrefix($"http://localhost:{port}/");
 
             public Builder WithPrefix(string prefix) {
                 prefixes.Add(prefix);
