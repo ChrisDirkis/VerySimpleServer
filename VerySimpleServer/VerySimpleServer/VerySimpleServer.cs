@@ -132,6 +132,11 @@ namespace VerySimpleServer {
             }
 
             public VerySimpleServer Build() {
+                if (prefixes.Count == 0) {
+                    // TODO more specific exception
+                    throw new Exception("No prefixes provided");
+                }
+
                 return new VerySimpleServer() {
                     prefixes = prefixes,
                     getDelegateRoutes = getDelegateRoutes,
