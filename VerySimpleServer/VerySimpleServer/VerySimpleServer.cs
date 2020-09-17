@@ -22,12 +22,12 @@ namespace VerySimpleServer {
 
         private VerySimpleServer() { }
 
-        public async Task Start() {
+        public void Start() {
             cancellationTokenSource = new CancellationTokenSource();
-            await Start(DefaultMaxConcurrentRequests, cancellationTokenSource.Token);
+            Start(DefaultMaxConcurrentRequests, cancellationTokenSource.Token);
         }
 
-        public async Task Start(int maxConcurrentRequests, CancellationToken token) {
+        public void Start(int maxConcurrentRequests, CancellationToken token) {
             listener = new HttpListener();
             foreach (var prefix in prefixes) {
                 listener.Prefixes.Add(prefix);
@@ -38,16 +38,18 @@ namespace VerySimpleServer {
             for (int i = 0; i < maxConcurrentRequests; i++)
                 requests.Add(listener.GetContextAsync());
 
-            while (!token.IsCancellationRequested) {
-                Task t = await Task.WhenAny(requests);
-                requests.Remove(t);
+            Task.Run(async () => {
+                while (!token.IsCancellationRequested) {
+                    Task t = await Task.WhenAny(requests);
+                    requests.Remove(t);
 
-                if (t is Task<HttpListenerContext>) {
-                    var context = (t as Task<HttpListenerContext>).Result;
-                    requests.Add(ProcessRequestAsync(context));
-                    requests.Add(listener.GetContextAsync());
+                    if (t is Task<HttpListenerContext>) {
+                        var context = await (t as Task<HttpListenerContext>);
+                        requests.Add(ProcessRequestAsync(context));
+                        requests.Add(listener.GetContextAsync());
+                    }
                 }
-            }
+            }, token);
         }
 
         public void Stop() {
