@@ -49,7 +49,13 @@ namespace VerySimpleServer {
             }
         }
 
-        public async Task ProcessRequestAsync(HttpListenerContext context) {
+        public void Stop() {
+            if (cancellationTokenSource?.IsCancellationRequested ?? false) {
+                cancellationTokenSource.Cancel();
+            }
+            listener.Stop();
+        }
+
             var route = context.Request.Url.AbsolutePath;
             var method = context.Request.HttpMethod.ToUpper();
             if (method == GetMethod && getDelegateRoutes.TryGetValue(route, out var getDelegate)) {
@@ -78,12 +84,8 @@ namespace VerySimpleServer {
 
         // TODO CA1063
         public void Dispose() {
-            if (cancellationTokenSource != null) {
-                cancellationTokenSource.Cancel();
-            }
-            listener.Stop();
+            Stop();
         }
-
 
         public class Builder {
             private List<string> prefixes = new List<string>();
