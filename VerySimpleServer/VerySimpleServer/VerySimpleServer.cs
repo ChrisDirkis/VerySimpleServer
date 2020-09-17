@@ -56,6 +56,7 @@ namespace VerySimpleServer {
             listener.Stop();
         }
 
+        private async Task ProcessRequestAsync(HttpListenerContext context) {
             var route = context.Request.Url.AbsolutePath;
             var method = context.Request.HttpMethod.ToUpper();
             if (method == GetMethod && getDelegateRoutes.TryGetValue(route, out var getDelegate)) {
