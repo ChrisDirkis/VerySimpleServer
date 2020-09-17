@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 namespace VerySimpleServer {
     public class VerySimpleServer : IDisposable {
         public const int DefaultMaxConcurrentRequests = 100;
+        public const string TemporaryListenAddress = "http://+:80/Temporary_Listen_Addresses/";
         private const string GetMethod = "GET";
         
         private HttpListener listener;
@@ -96,6 +97,14 @@ namespace VerySimpleServer {
 
             public Builder WithLocalhost(int port = 8080)
                 => WithPrefix($"http://localhost:{port}/");
+
+            /// <summary>
+            /// This uses the preconfigured temporary listening address, which is always available as a non-admin on Windows
+            /// Other applications may be trying to use this (apparently Skype), so it is not recommended.
+            /// </summary>
+            /// <returns></returns>
+            public Builder WithTemporaryListenAddress()
+                => WithPrefix(TemporaryListenAddress);
 
             public Builder WithPrefix(string prefix) {
                 prefixes.Add(prefix);
