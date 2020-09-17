@@ -54,7 +54,9 @@ namespace VerySimpleServer {
             if (cancellationTokenSource?.IsCancellationRequested ?? false) {
                 cancellationTokenSource.Cancel();
             }
-            listener.Stop();
+            if (listener.IsListening) {
+                listener.Stop();
+            }
         }
 
         private async Task ProcessRequestAsync(HttpListenerContext context) {
