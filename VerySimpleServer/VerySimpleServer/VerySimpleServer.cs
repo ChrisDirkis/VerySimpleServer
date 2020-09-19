@@ -18,16 +18,19 @@ namespace VerySimpleServer {
         private Dictionary<string, Action<HttpListenerContext>> getDelegateRoutes;
         private Dictionary<string, (byte[], string)> getDataRoutes;
 
+        private int maxConcurrentRequests;
+        private CancellationToken cancellationToken;
+
         private List<Action<string>> logDelegates;
 
         private VerySimpleServer() { }
 
         public void Start() {
-            cancellationTokenSource = new CancellationTokenSource();
-            Start(DefaultMaxConcurrentRequests, cancellationTokenSource.Token);
-        }
+            if (cancellationToken == null) {
+                cancellationTokenSource = new CancellationTokenSource();
+                cancellationToken = cancellationTokenSource.Token;
+            }
 
-        public void Start(int maxConcurrentRequests, CancellationToken token) {
             listener = new HttpListener();
             foreach (var prefix in prefixes) {
                 listener.Prefixes.Add(prefix);
@@ -39,7 +42,7 @@ namespace VerySimpleServer {
                 requests.Add(listener.GetContextAsync());
 
             Task.Run(async () => {
-                while (!token.IsCancellationRequested) {
+                while (!cancellationToken.IsCancellationRequested) {
                     Task t = await Task.WhenAny(requests);
                     requests.Remove(t);
 
@@ -49,7 +52,7 @@ namespace VerySimpleServer {
                         requests.Add(listener.GetContextAsync());
                     }
                 }
-            }, token);
+            }, cancellationToken);
         }
 
         public void Stop() {
@@ -98,6 +101,8 @@ namespace VerySimpleServer {
             private Dictionary<string, Action<HttpListenerContext>> getDelegateRoutes = new Dictionary<string, Action<HttpListenerContext>>();
             private Dictionary<string, (byte[], string)> getDataRoutes = new Dictionary<string, (byte[], string)>();
             private List<Action<string>> logDelegates = new List<Action<string>>();
+            private int maxConcurrentRequests = DefaultMaxConcurrentRequests;
+            private CancellationToken cancellationToken;
 
             public Builder WithLocalhost(int port = 8080)
                 => WithPrefix($"http://localhost:{port}/");
@@ -135,18 +140,33 @@ namespace VerySimpleServer {
                 return this;
             }
 
-            public VerySimpleServer Build() {
+            public Builder WithMaxConcurrentRequests(int maxConcurrentRequests) {
+                this.maxConcurrentRequests = maxConcurrentRequests;
+                return this;
+            }
+
+
+            public Builder WithCancellationToken(CancellationToken token) {
+                cancellationToken = token;
+                return this;
+            }
+
+
+            public VerySimpleServer Start() {
                 if (prefixes.Count == 0) {
                     // TODO more specific exception
                     throw new Exception("No prefixes provided");
                 }
-
-                return new VerySimpleServer() {
+                var server = new VerySimpleServer() {
                     prefixes = prefixes,
                     getDelegateRoutes = getDelegateRoutes,
                     getDataRoutes = getDataRoutes,
-                    logDelegates =  logDelegates,
+                    logDelegates = logDelegates,
+                    maxConcurrentRequests = maxConcurrentRequests,
+                    cancellationToken = cancellationToken,
                 };
+                server.Start();
+                return server;
             }
 
             private void CheckGetRouteCollision(string route) {

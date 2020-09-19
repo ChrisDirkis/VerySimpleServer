@@ -9,9 +9,8 @@ namespace VerySimpleServer.Tests {
             using (var server = new VerySimpleServer.Builder()
                 .WithLocalhost()
                 .WithGetRoute("/", "Hello World!")
-                .Build()) {
-                server.Start();
-                server.Stop();
+                .Start()) {
+                // Things happen here
             }
         }
     }
